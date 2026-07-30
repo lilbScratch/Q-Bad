@@ -278,10 +278,12 @@ export const QueueProvider = ({ children }) => {
       name: playerName.trim(),
       level, avatar, joinedAt: Date.now(), matchesPlayed: 0,
     };
-    if (!currentPlayerId) {
+    
+    if (viewRole === 'player') {
       setCurrentPlayerId(newPlayer.id);
       localStorage.setItem('badminton_current_player_id', newPlayer.id);
     }
+
     dispatchAction('ADD_PLAYER', { player: newPlayer });
     return newPlayer;
   };
