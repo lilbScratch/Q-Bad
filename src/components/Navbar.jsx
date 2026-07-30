@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useQueue } from '../context/QueueContext';
-import { QrCode, Users, Settings, RefreshCw, Edit3, Check, X } from 'lucide-react';
+import { QrCode, Edit3, Check, X, RefreshCw } from 'lucide-react';
 
 export const Navbar = ({ onOpenQR }) => {
-  const { venueName, setVenueName, viewRole, setViewRole, queue, courts, resetDemoData } = useQueue();
+  const { venueName, setVenueName, viewRole, queue, courts, resetDemoData, connectionStatus } = useQueue();
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(venueName);
 
@@ -67,39 +67,31 @@ export const Navbar = ({ onOpenQR }) => {
 
         {/* Right: Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Role Tabs */}
+          {/* Connection Status indicator */}
           <div style={{
-            background: 'var(--bg)',
-            padding: '3px',
-            borderRadius: 'var(--radius-sm)',
-            display: 'flex',
-            border: '1px solid var(--border)',
+             display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem',
+             color: 'var(--text-secondary)',
+             padding: '4px 8px',
+             background: 'var(--bg)',
+             borderRadius: 'var(--radius-sm)',
+             border: '1px solid var(--border)',
+             marginRight: '4px'
           }}>
-            {['organizer', 'player'].map(role => (
-              <button
-                key={role}
-                onClick={() => setViewRole(role)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  border: 'none',
-                  background: viewRole === role ? '#fff' : 'transparent',
-                  boxShadow: viewRole === role ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  color: viewRole === role ? 'var(--text)' : 'var(--text-secondary)',
-                  fontWeight: 500,
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font)',
-                }}
-              >
-                {role === 'organizer' ? '🛠 คนจัดสนาม' : '🙋 ผู้เล่น'}
-              </button>
-            ))}
+            <div style={{
+              width: '8px', height: '8px', borderRadius: '50%',
+              background: connectionStatus === 'connected' ? 'var(--success)' : 
+                          connectionStatus === 'connecting' ? '#eab308' : 'var(--danger)'
+            }} title={connectionStatus} />
+            <span style={{ fontWeight: 500 }}>
+              {viewRole === 'organizer' ? '🛠 คนจัดสนาม' : '🙋 ผู้เล่น'}
+            </span>
           </div>
 
-          <button className="btn btn-secondary" onClick={onOpenQR} style={{ padding: '6px 10px' }}>
-            <QrCode size={16} />
-          </button>
+          {viewRole === 'organizer' && (
+            <button className="btn btn-primary" onClick={onOpenQR} style={{ padding: '6px 10px' }}>
+              <QrCode size={16} /> QR
+            </button>
+          )}
 
           {viewRole === 'organizer' && (
             <button

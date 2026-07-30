@@ -4,9 +4,9 @@ import { QrCode, Copy, Check, X, ExternalLink } from 'lucide-react';
 import { useQueue } from '../context/QueueContext';
 
 export const QRCodeModal = ({ onClose }) => {
-  const { venueName } = useQueue();
+  const { venueName, roomId } = useQueue();
   const [copied, setCopied] = useState(false);
-  const playerUrl = `${window.location.origin}${window.location.pathname}?role=player`;
+  const playerUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(playerUrl);
