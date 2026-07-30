@@ -272,11 +272,11 @@ export const QueueProvider = ({ children }) => {
   const updateScore = (courtId, team, delta) => dispatchAction('UPDATE_SCORE', { courtId, team, delta });
   const finishMatch = (courtId, rotationMode, selectedExitingPlayerIds) => dispatchAction('FINISH_MATCH', { courtId, rotationMode, selectedExitingPlayerIds });
   
-  const addPlayerToQueue = (playerName, level = 'Intermediate', avatar = '🏸') => {
+  const addPlayerToQueue = (playerName, avatar = '🏸') => {
     const newPlayer = {
       id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: playerName.trim(),
-      level, avatar, joinedAt: Date.now(), matchesPlayed: 0,
+      avatar, joinedAt: Date.now(), matchesPlayed: 0,
     };
     
     if (viewRole === 'player') {

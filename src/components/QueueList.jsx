@@ -61,7 +61,7 @@ export const QueueList = ({ onOpenAddPlayer }) => {
                     {isNext && <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>เตรียมพร้อม</span>}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    {player.level} • เล่นแล้ว {player.matchesPlayed || 0} เกม
+                    เล่นแล้ว {player.matchesPlayed || 0} เกม
                   </div>
                 </div>
               </div>

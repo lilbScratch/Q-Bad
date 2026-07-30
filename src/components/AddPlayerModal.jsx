@@ -3,18 +3,16 @@ import { useQueue } from '../context/QueueContext';
 import { UserPlus, X, Sparkles } from 'lucide-react';
 
 const AVATARS = ['🏸', '🔥', '⚡', '🌟', '🎯', '🏆', '🚀', '🌱', '🥇', '✨', '💫', '🦁'];
-const LEVELS = ['มือใหม่ (Beginner)', 'มือปานกลาง (Intermediate)', 'มือเก๋า (Advanced)'];
 
 export const AddPlayerModal = ({ onClose }) => {
   const { addPlayerToQueue } = useQueue();
   const [name, setName] = useState('');
-  const [level, setLevel] = useState('มือปานกลาง (Intermediate)');
   const [selectedAvatar, setSelectedAvatar] = useState('🏸');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    addPlayerToQueue(name.trim(), level.split(' ')[0], selectedAvatar);
+    addPlayerToQueue(name.trim(), selectedAvatar);
     onClose();
   };
 
@@ -35,15 +33,17 @@ export const AddPlayerModal = ({ onClose }) => {
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ระดับฝีมือ</label>
-            <select className="form-input" value={level} onChange={e => setLevel(e.target.value)} style={{ cursor: 'pointer' }}>
-              {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ไอคอน</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ไอคอน / อิโมจิ</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+              <input 
+                type="text" 
+                className="form-input" 
+                value={selectedAvatar}
+                onChange={e => setSelectedAvatar(e.target.value.substring(0, 2))}
+                style={{ width: '50px', textAlign: 'center', fontSize: '1.2rem', padding: '6px' }}
+                placeholder="อิโมจิ"
+              />
+              <span style={{ color: 'var(--border)', margin: '0 4px' }}>|</span>
               {AVATARS.map(av => (
                 <button
                   type="button" key={av} onClick={() => setSelectedAvatar(av)}

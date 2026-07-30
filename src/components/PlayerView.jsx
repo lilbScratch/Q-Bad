@@ -9,7 +9,6 @@ export const PlayerView = () => {
   const { queue, courts, currentPlayerId, addPlayerToQueue, removePlayerFromQueue, venueName } = useQueue();
   const [inputName, setInputName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('🏸');
-  const [level, setLevel] = useState('Intermediate');
 
   const myQueueIndex = queue.findIndex(p => p.id === currentPlayerId);
   const myQueueItem = myQueueIndex !== -1 ? queue[myQueueIndex] : null;
@@ -24,7 +23,7 @@ export const PlayerView = () => {
   const handleJoin = (e) => {
     e.preventDefault();
     if (!inputName.trim()) return;
-    addPlayerToQueue(inputName.trim(), level, selectedAvatar);
+    addPlayerToQueue(inputName.trim(), selectedAvatar);
   };
 
   const handleCancel = () => {
@@ -83,7 +82,6 @@ export const PlayerView = () => {
           }}>
             <span style={{ fontSize: '1.2rem' }}>{myQueueItem.avatar}</span>
             <span style={{ fontWeight: 600 }}>{myQueueItem.name}</span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({myQueueItem.level})</span>
           </div>
 
           <button className="btn btn-danger" onClick={handleCancel} style={{ width: '100%' }}>
@@ -104,16 +102,17 @@ export const PlayerView = () => {
               <input type="text" className="form-input" placeholder="ชื่อเล่น / ฉายา" value={inputName} onChange={e => setInputName(e.target.value)} required />
             </div>
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ระดับฝีมือ</label>
-              <select className="form-input" value={level} onChange={e => setLevel(e.target.value)} style={{ cursor: 'pointer' }}>
-                <option value="Beginner">มือใหม่</option>
-                <option value="Intermediate">ปานกลาง</option>
-                <option value="Advanced">มือเก๋า</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ไอคอน</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ไอคอน / อิโมจิ</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={selectedAvatar}
+                  onChange={e => setSelectedAvatar(e.target.value.substring(0, 2))}
+                  style={{ width: '50px', textAlign: 'center', fontSize: '1.2rem', padding: '6px' }}
+                  placeholder="อิโมจิ"
+                />
+                <span style={{ color: 'var(--border)', margin: '0 4px' }}>|</span>
                 {AVATARS.map(av => (
                   <button type="button" key={av} onClick={() => setSelectedAvatar(av)} style={{
                     fontSize: '1.2rem', padding: '6px', borderRadius: 'var(--radius-sm)',
