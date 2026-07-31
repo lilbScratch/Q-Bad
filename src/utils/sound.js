@@ -20,6 +20,9 @@ class SoundManager {
   // Play chime for turn alert
   playTurnAlert() {
     try {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
       this.init();
       if (!this.audioCtx) return;
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQueue } from '../context/QueueContext';
 import { sounds } from '../utils/sound';
 import { LogOut, UserPlus, Play } from 'lucide-react';
@@ -6,28 +6,59 @@ import { LogOut, UserPlus, Play } from 'lucide-react';
 const AVATARS = ['🏸', '🔥', '⚡', '🌟', '🎯', '🏆', '🚀', '🌱', '🥇', '✨'];
 
 export const PlayerView = () => {
-  const { queue, courts, currentPlayerId, addPlayerToQueue, removePlayerFromQueue, venueName } = useQueue();
+  const { queue, courts, currentPlayerIds, addPlayerToQueue, removePlayerFromQueue, venueName } = useQueue();
   const [inputName, setInputName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('🏸');
+  const [queueCount, setQueueCount] = useState(1);
 
-  const myQueueIndex = queue.findIndex(p => p.id === currentPlayerId);
-  const myQueueItem = myQueueIndex !== -1 ? queue[myQueueIndex] : null;
-  const playingCourt = courts.find(c =>
-    c.teamA.some(p => p.id === currentPlayerId) || c.teamB.some(p => p.id === currentPlayerId)
-  );
+  const myStatuses = currentPlayerIds.map(id => {
+    const queueIndex = queue.findIndex(p => p.id === id);
+    const queueItem = queueIndex !== -1 ? queue[queueIndex] : null;
+    const playingCourt = courts.find(c =>
+      c.teamA.some(p => p.id === id) || c.teamB.some(p => p.id === id)
+    );
+    const playerObj = queueItem || (playingCourt ? [...playingCourt.teamA, ...playingCourt.teamB].find(p => p.id === id) : null);
+    
+    return { id, queueIndex, queueItem, playingCourt, playerObj };
+  }).filter(s => s.playerObj);
+
+  const hasActivePlayers = myStatuses.length > 0;
+
+
+  const alertedRef = useRef({});
 
   useEffect(() => {
-    if (myQueueIndex >= 0 && myQueueIndex < 2) sounds.playTurnAlert();
-  }, [myQueueIndex]);
+    let triggered = false;
+    myStatuses.forEach(s => {
+      // แจ้งเตือนเมื่อถึงคิว (คิวที่ 0) และยังไม่เคยแจ้งเตือนมาก่อน
+      if (s.queueIndex === 0 && !alertedRef.current[`${s.id}-turn-0`]) {
+        triggered = true;
+        alertedRef.current[`${s.id}-turn-0`] = true;
+      }
+      // แจ้งเตือนเมื่อใกล้ถึงคิว (คิวที่ 1)
+      else if (s.queueIndex === 1 && !alertedRef.current[`${s.id}-turn-1`]) {
+        triggered = true;
+        alertedRef.current[`${s.id}-turn-1`] = true;
+      }
+    });
+
+    if (triggered) {
+      sounds.playTurnAlert();
+    }
+  }, [myStatuses]);
 
   const handleJoin = (e) => {
     e.preventDefault();
     if (!inputName.trim()) return;
-    addPlayerToQueue(inputName.trim(), selectedAvatar);
+    addPlayerToQueue(inputName.trim(), selectedAvatar, queueCount);
   };
 
-  const handleCancel = () => {
-    if (confirm('ยกเลิกการต่อคิว?') && currentPlayerId) removePlayerFromQueue(currentPlayerId);
+  const handleCancelAll = () => {
+    if (confirm('ยกเลิกการต่อคิวทั้งหมดของคุณ?')) {
+      myStatuses.forEach(s => {
+        if (s.queueItem) removePlayerFromQueue(s.id);
+      });
+    }
   };
 
   return (
@@ -39,56 +70,64 @@ export const PlayerView = () => {
         <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginTop: '6px' }}>ระบบต่อคิวผู้เล่น</h2>
       </div>
 
-      {/* State: Playing on court */}
-      {playingCourt ? (
-        <div className="card glow-animation" style={{
-          padding: '24px', textAlign: 'center',
-          background: 'var(--success-light)', border: '2px solid var(--success)',
-        }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🔥</div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#166534', marginBottom: '4px' }}>
-            กำลังเล่นอยู่ใน {playingCourt.name}!
-          </h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            ขอให้สนุก! เมื่อจบเกม ระบบจะนำคุณกลับเข้าคิวอัตโนมัติ
-          </p>
+      {hasActivePlayers ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {myStatuses.map((status, index) => {
+            const { id, queueIndex, queueItem, playingCourt, playerObj } = status;
+            
+            if (playingCourt) {
+              return (
+                <div key={id} className="card glow-animation" style={{
+                  padding: '16px', textAlign: 'center',
+                  background: 'var(--success-light)', border: '2px solid var(--success)',
+                }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🔥</div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#166534', marginBottom: '4px' }}>
+                    {playerObj.name} กำลังเล่นอยู่ใน {playingCourt.name}!
+                  </h3>
+                </div>
+              );
+            }
+            
+            if (queueItem) {
+              return (
+                <div key={id} className="card" style={{
+                  padding: '16px', textAlign: 'center',
+                  border: queueIndex < 2 ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  background: queueIndex < 2 ? 'var(--primary-light)' : '#fff',
+                }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '50%', margin: '0 auto 8px',
+                    background: queueIndex < 2 ? 'var(--primary)' : 'var(--bg)',
+                    color: queueIndex < 2 ? '#fff' : 'var(--text)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.4rem', fontWeight: 800,
+                  }}>#{queueIndex + 1}</div>
+
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>
+                    {queueIndex === 0 ? '🎉 ถึงคิวของคุณแล้ว!' : `เหลืออีก ${queueIndex} คิว`}
+                  </h3>
+                  
+                  <div style={{
+                    background: 'var(--bg)', padding: '6px 12px', borderRadius: 'var(--radius-sm)',
+                    display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginTop: '8px'
+                  }}>
+                    <span style={{ fontSize: '1.1rem' }}>{queueItem.avatar}</span>
+                    <span style={{ fontWeight: 600 }}>{queueItem.name}</span>
+                  </div>
+                </div>
+              );
+            }
+            
+            return null;
+          })}
+          
+          {myStatuses.some(s => s.queueItem) && (
+            <button className="btn btn-danger" onClick={handleCancelAll} style={{ width: '100%' }}>
+              <LogOut size={14} /> ยกเลิกต่อคิวที่เหลือทั้งหมด
+            </button>
+          )}
         </div>
-
-      ) : myQueueItem ? (
-        /* State: In queue */
-        <div className="card" style={{
-          padding: '24px', textAlign: 'center',
-          border: myQueueIndex < 2 ? '2px solid var(--primary)' : '1px solid var(--border)',
-          background: myQueueIndex < 2 ? 'var(--primary-light)' : '#fff',
-        }}>
-          <div style={{
-            width: '64px', height: '64px', borderRadius: '50%', margin: '0 auto 12px',
-            background: myQueueIndex < 2 ? 'var(--primary)' : 'var(--bg)',
-            color: myQueueIndex < 2 ? '#fff' : 'var(--text)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.8rem', fontWeight: 800,
-          }}>#{myQueueIndex + 1}</div>
-
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '4px' }}>
-            {myQueueIndex === 0 ? '🎉 ถึงคิวของคุณแล้ว!' : `เหลืออีก ${myQueueIndex} คิว`}
-          </h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-            {myQueueIndex === 0 ? 'เตรียมตัวไปที่สนามได้เลย' : 'กรุณารอสักครู่'}
-          </p>
-
-          <div style={{
-            background: 'var(--bg)', padding: '10px 16px', borderRadius: 'var(--radius-sm)',
-            display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', marginBottom: '14px',
-          }}>
-            <span style={{ fontSize: '1.2rem' }}>{myQueueItem.avatar}</span>
-            <span style={{ fontWeight: 600 }}>{myQueueItem.name}</span>
-          </div>
-
-          <button className="btn btn-danger" onClick={handleCancel} style={{ width: '100%' }}>
-            <LogOut size={14} /> ยกเลิกต่อคิว
-          </button>
-        </div>
-
       ) : (
         /* State: Join form */
         <div className="card" style={{ padding: '20px' }}>
@@ -100,6 +139,19 @@ export const PlayerView = () => {
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ชื่อ *</label>
               <input type="text" className="form-input" placeholder="ชื่อเล่น / ฉายา" value={inputName} onChange={e => setInputName(e.target.value)} required />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>จำนวนคนที่จะต่อคิว</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input 
+                  type="range" 
+                  min="1" max="10" 
+                  value={queueCount} 
+                  onChange={e => setQueueCount(parseInt(e.target.value))} 
+                  style={{ flex: 1 }}
+                />
+                <span style={{ fontWeight: 600, width: '30px', textAlign: 'center' }}>{queueCount}</span>
+              </div>
             </div>
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>ไอคอน / อิโมจิ</label>
@@ -124,7 +176,7 @@ export const PlayerView = () => {
               </div>
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '4px' }}>
-              <UserPlus size={16} /> เข้าต่อคิว
+              <UserPlus size={16} /> เข้าต่อคิว ({queueCount} คน)
             </button>
           </form>
         </div>

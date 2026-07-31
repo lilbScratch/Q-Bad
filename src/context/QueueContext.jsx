@@ -47,11 +47,20 @@ export const QueueProvider = ({ children }) => {
     return INITIAL_DEMO_DATA; // Player starts empty, waits for sync
   });
 
-  const [currentPlayerId, setCurrentPlayerId] = useState(() => {
-    return localStorage.getItem('badminton_current_player_id') || null;
+  const [currentPlayerIds, setCurrentPlayerIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem('badminton_current_player_ids');
+      if (stored) return JSON.parse(stored);
+      // Fallback for previous version
+      const oldId = localStorage.getItem('badminton_current_player_id');
+      if (oldId) return [oldId];
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
   });
 
-  const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting, connected, disconnected
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting, connected, connected
 
   // PeerJS setup
   const peerRef = useRef(null);
@@ -217,6 +226,9 @@ export const QueueProvider = ({ children }) => {
       case 'ADD_PLAYER':
         newState.queue = [...currentState.queue, payload.player];
         break;
+      case 'ADD_PLAYERS':
+        newState.queue = [...currentState.queue, ...payload.players];
+        break;
       case 'REMOVE_PLAYER':
         newState.queue = currentState.queue.filter(p => p.id !== payload.playerId);
         break;
@@ -272,26 +284,32 @@ export const QueueProvider = ({ children }) => {
   const updateScore = (courtId, team, delta) => dispatchAction('UPDATE_SCORE', { courtId, team, delta });
   const finishMatch = (courtId, rotationMode, selectedExitingPlayerIds) => dispatchAction('FINISH_MATCH', { courtId, rotationMode, selectedExitingPlayerIds });
   
-  const addPlayerToQueue = (playerName, avatar = '🏸') => {
-    const newPlayer = {
-      id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      name: playerName.trim(),
-      avatar, joinedAt: Date.now(), matchesPlayed: 0,
-    };
+  const addPlayerToQueue = (playerName, avatar = '🏸', count = 1) => {
+    const newPlayers = [];
+    for (let i = 0; i < count; i++) {
+      const nameSuffix = count > 1 ? ` ${i + 1}` : '';
+      newPlayers.push({
+        id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}-${i}`,
+        name: playerName.trim() + nameSuffix,
+        avatar, joinedAt: Date.now(), matchesPlayed: 0,
+      });
+    }
     
     if (viewRole === 'player') {
-      setCurrentPlayerId(newPlayer.id);
-      localStorage.setItem('badminton_current_player_id', newPlayer.id);
+      const newIds = [...currentPlayerIds, ...newPlayers.map(p => p.id)];
+      setCurrentPlayerIds(newIds);
+      localStorage.setItem('badminton_current_player_ids', JSON.stringify(newIds));
     }
 
-    dispatchAction('ADD_PLAYER', { player: newPlayer });
-    return newPlayer;
+    dispatchAction('ADD_PLAYERS', { players: newPlayers });
+    return newPlayers;
   };
   
   const removePlayerFromQueue = (playerId) => {
-    if (playerId === currentPlayerId) {
-      setCurrentPlayerId(null);
-      localStorage.removeItem('badminton_current_player_id');
+    if (currentPlayerIds.includes(playerId)) {
+      const newIds = currentPlayerIds.filter(id => id !== playerId);
+      setCurrentPlayerIds(newIds);
+      localStorage.setItem('badminton_current_player_ids', JSON.stringify(newIds));
     }
     dispatchAction('REMOVE_PLAYER', { playerId });
   };
@@ -308,8 +326,8 @@ export const QueueProvider = ({ children }) => {
         viewRole,
         roomId,
         connectionStatus,
-        currentPlayerId,
-        setCurrentPlayerId,
+        currentPlayerIds,
+        setCurrentPlayerIds,
         setVenueName, addCourt, removeCourt, updateCourtMode, updateScore, finishMatch,
         addPlayerToQueue, removePlayerFromQueue, moveQueue, autoFillCourts, resetDemoData, clearAllPlayers,
       }}
