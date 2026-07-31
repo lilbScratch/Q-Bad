@@ -27,13 +27,13 @@ class SoundManager {
       if (!this.audioCtx) return;
 
       const now = this.audioCtx.currentTime;
-      
+
       // Note 1 (E5)
       const osc1 = this.audioCtx.createOscillator();
       const gain1 = this.audioCtx.createGain();
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(659.25, now);
-      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.setValueAtTime(0.5, now);
       gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
       osc1.connect(gain1);
       gain1.connect(this.audioCtx.destination);
@@ -45,7 +45,7 @@ class SoundManager {
       const gain2 = this.audioCtx.createGain();
       osc2.type = 'sine';
       osc2.frequency.setValueAtTime(880, now + 0.15);
-      gain2.gain.setValueAtTime(0.4, now + 0.15);
+      gain2.gain.setValueAtTime(0.6, now + 0.15);
       gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
       osc2.connect(gain2);
       gain2.connect(this.audioCtx.destination);
