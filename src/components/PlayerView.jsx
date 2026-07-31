@@ -30,15 +30,29 @@ export const PlayerView = () => {
   useEffect(() => {
     let triggered = false;
     myStatuses.forEach(s => {
-      // แจ้งเตือนเมื่อถึงคิว (คิวที่ 0) และยังไม่เคยแจ้งเตือนมาก่อน
-      if (s.queueIndex === 0 && !alertedRef.current[`${s.id}-turn-0`]) {
-        triggered = true;
-        alertedRef.current[`${s.id}-turn-0`] = true;
-      }
-      // แจ้งเตือนเมื่อใกล้ถึงคิว (คิวที่ 1)
-      else if (s.queueIndex === 1 && !alertedRef.current[`${s.id}-turn-1`]) {
-        triggered = true;
-        alertedRef.current[`${s.id}-turn-1`] = true;
+      if (s.playingCourt) {
+        // แจ้งเตือนเมื่อได้ลงเล่น
+        if (!alertedRef.current[`${s.id}-playing`]) {
+          triggered = true;
+          alertedRef.current[`${s.id}-playing`] = true;
+        }
+        // เมื่อได้เล่นแล้ว รีเซ็ตสถานะการเตือนคิว เพื่อให้เตือนใหม่รอบหน้า
+        alertedRef.current[`${s.id}-turn-0`] = false;
+        alertedRef.current[`${s.id}-turn-1`] = false;
+      } else {
+        // รีเซ็ตสถานะการเตือนลงสนามเมื่อกลับมาอยู่คิว
+        alertedRef.current[`${s.id}-playing`] = false;
+        
+        // แจ้งเตือนเมื่อถึงคิว (คิวที่ 0) และยังไม่เคยแจ้งเตือนมาก่อน
+        if (s.queueIndex === 0 && !alertedRef.current[`${s.id}-turn-0`]) {
+          triggered = true;
+          alertedRef.current[`${s.id}-turn-0`] = true;
+        }
+        // แจ้งเตือนเมื่อใกล้ถึงคิว (คิวที่ 1)
+        else if (s.queueIndex === 1 && !alertedRef.current[`${s.id}-turn-1`]) {
+          triggered = true;
+          alertedRef.current[`${s.id}-turn-1`] = true;
+        }
       }
     });
 
